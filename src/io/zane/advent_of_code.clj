@@ -8,6 +8,7 @@
       (>= y (count v))
       (>= x (count (nth v y)))))
 
+#_
 (defn adjacent-indexes
   [v x y]
   (->> (for [x (range (dec x) (+ 2 x))
@@ -16,6 +17,30 @@
        (remove #{[x y]})
        (remove #(apply out-of-bounds? v %))))
 
+(defn lines-of-sight
+  [v x y]
+  (for [dx [-1 0 1]
+        dy [-1 0 1]
+        :when (not= [0 0] [dx dy])]
+    (->> (iterate (fn [[x y]]
+                    [(+ x dx)
+                     (+ y dy)])
+                  [(+ x dx)
+                   (+ y dy)])
+         (take-while (fn [[x y]]
+                       (not (out-of-bounds? v x y))))
+         (map (fn [[x y]]
+                (get-in v [y x]))))))
+
+(defn adjacent-values'
+  [v x y]
+  (->> (lines-of-sight v x y)
+       (map (fn [seats]
+              (->> seats
+                   (remove #{:floor})
+                   (first))))))
+
+#_
 (defn adjacent-values
   [v x y]
   (map (fn [[x y]]
@@ -24,7 +49,7 @@
 
 (defn next-seat
   [v x y]
-  (let [adjacent-counts (frequencies (adjacent-values v x y))]
+  (let [adjacent-counts (frequencies (adjacent-values' v x y))]
     (case (get-in v [y x])
       :floor
       :floor
@@ -36,7 +61,8 @@
 
       :occupied
       (if (>= (get adjacent-counts :occupied 0)
-              4)
+              ;; 4
+              5)
         :empty
         :occupied))))
 
@@ -82,9 +108,12 @@
   (y next-plane v))
 
 (comment
+
   (->> (slurp "/Users/zane/Desktop/input.txt")
        (parse)
        (last-plane)
        (into [] cat)
-       (frequencies))
+       (frequencies)
+       (:occupied))
+
   )
